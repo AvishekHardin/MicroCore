@@ -95,7 +95,7 @@ inline void pu_rxtx_wait()
     asm volatile ("" :: "r" (dummy3));
 
 __attribute__((weak))
-void _pu_tx2()
+void _pu_tx()
 {
     alloc_regs();
     register char c asm("r18");
@@ -134,7 +134,7 @@ void _pu_tx2()
 inline void pu_tx(char c)
 {
     register char ch asm("r18") = c;
-    asm volatile ("%~call %x1" : "+r"(ch) : "i"(_pu_tx2) : "r19", "r24", "r25");
+    asm volatile ("%~call %x1" : "+r"(ch) : "i"(_pu_tx) : "r19", "r24", "r25");
 }
 
 inline void prints_P(const __FlashStringHelper *s)
@@ -149,13 +149,13 @@ inline void prints_P(const __FlashStringHelper *s)
     "rjmp 1b\n"
     "1:\n"
     : "+e" (s), [c] "+r" (c)
-    : "i" (_pu_tx2)
+    : "i" (_pu_tx)
     : "r19", "r24", "r25"
     );
 }
 
 __attribute__((weak))
-void _pu_rx2()
+void _pu_rx()
 {
     alloc_regs();
     register char c asm("r18");
@@ -194,7 +194,7 @@ void _pu_rx2()
 inline char pu_rx()
 {
     register char c asm("r18");
-    asm ("%~call %x1" : "=r"(c) : "i"(_pu_rx2) : "r24", "r25");
+    asm ("%~call %x1" : "=r"(c) : "i"(_pu_rx) : "r24", "r25");
     return c;
 }
 
