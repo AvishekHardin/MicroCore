@@ -46,7 +46,7 @@ int16_t HalfDuplexSerial::read(void)
   #ifdef HALF_DUPLEX_SERIAL_DISABLE_READ
   return -1;
   #else
-  return RxByteNBNegOneReturn();
+  return pu_rx();
   #endif
 }
 
@@ -54,18 +54,17 @@ int16_t HalfDuplexSerial::read(void)
 // non blocking read, returning -1 if no data was read
 int16_t HalfDuplexSerial::read_byte(void)
 {
-  return RxByteNBNegOneReturn();
+  return pu_rx();
 }
 
 char HalfDuplexSerial::read_char(void)
 {
-  return RxByteNBZeroReturn();
+  return pu_rx();
 }
 
 char HalfDuplexSerial::read_char_blocking(void)
 {
-  cli();
-  return RxByte();
+  return pu_rx();
 }
 
 void HalfDuplexSerial::read_str(char buf[], uint8_t length)
@@ -87,7 +86,7 @@ void HalfDuplexSerial::read_str(char buf[], uint8_t length)
   cli();
   do
   {
-    while( (!(buf[i] = RxByteNBZeroReturn())) && --t);
+  //  while( (!(buf[i] = RxByteNBZeroReturn())) && --t);
   } while((++i < (length-1)) && t);
   SREG = oldSREG; // Put back interrupts again
 
@@ -99,25 +98,18 @@ void HalfDuplexSerial::read_str(char buf[], uint8_t length)
 
 void HalfDuplexSerial::write(uint8_t ch)
 {
-  TxByte(ch);
+  pu_tx(ch);
 }
 
 void HalfDuplexSerial::write(const uint8_t *buffer, size_t size)
 {
   for(size_t n = 0; n < size; n++)
-    TxByte(buffer[n]);
+    pu_tx(buffer[n]);
 }
 
 void HalfDuplexSerial::print(const __FlashStringHelper *ifsh)
 {
-  PGM_P p = reinterpret_cast<PGM_P>(ifsh);
-  uint8_t c;
-
-  do
-  {
-    c = pgm_read_byte(p++);
-    TxByte(c);
-  } while(c);
+  prints_P(ifsh);
 }
 
 void HalfDuplexSerial::print(const String &s)
@@ -133,7 +125,7 @@ void HalfDuplexSerial::print(const char str[])
 
 void HalfDuplexSerial::print(char c)
 {
-  TxByte(c);
+  pu_tx(c);
 }
 
 #if PRINT_MAX_INT_TYPE != PRINT_INT_TYPE_BYTE
@@ -171,7 +163,7 @@ void HalfDuplexSerial::print(PRINT_INT_TYPE n, uint8_t base)
 {
   if (base == 10 && n < 0)
   {
-    TxByte('-');
+    pu_tx('-');
     printNumber(-n,base);
   }
   else
@@ -196,8 +188,8 @@ void HalfDuplexSerial::println(const __FlashStringHelper *ifsh)
 
 void HalfDuplexSerial::println(void)
 {
-  TxByte('\r');
-  TxByte('\n');
+  pu_tx('\r');
+  pu_tx('\n');
 }
 
 void HalfDuplexSerial::println(const String &s)
@@ -458,7 +450,7 @@ void HalfDuplexSerial::printFloat(double number, uint8_t digits)
   // Handle negative numbers
   if (number < 0.0)
   {
-     TxByte('-');
+     pu_tx('-');
      number = -number;
   }
 
@@ -479,7 +471,7 @@ void HalfDuplexSerial::printFloat(double number, uint8_t digits)
   // Print the decimal point, but only if there are digits beyond
   if (digits > 0)
   {
-    TxByte('.');
+    pu_tx('.');
   }
 
   // Extract digits from the remainder one at a time

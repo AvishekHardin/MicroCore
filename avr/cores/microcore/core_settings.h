@@ -17,8 +17,8 @@ need in order to free up space.
 // Arduino would support.
 
 // Pins to use for Tx and Rx
-#define UART_TX_PIN  PB0
-#define UART_RX_PIN  PB1
+#define UART_TX_PIN  B,0
+#define UART_RX_PIN  B,1
 
 // What should be the largest supported number?
 #define PRINT_MAX_INT_TYPE PRINT_INT_TYPE_LONG // PRINT_INT_TYPE_INT, PRINT_INT_TYPE_BYTE and PRINT_INT_TYPE_LONG supported.
@@ -33,7 +33,7 @@ need in order to free up space.
 // to reflect this.
 // See table below for all supported baud rates.
 
-//#define CUSTOM_BAUD_RATE 38400
+#define CUSTOM_BAUD_RATE 1000000
 
 // | Clock & baud | 460800 | 250000 | 230400 | 115200   | 57600    | 38400 | 19200    | 9600     | 4800 | 2400 | 1200 |
 // |--------------|--------|--------|--------|----------|----------|-------|----------|----------|------|------|------|

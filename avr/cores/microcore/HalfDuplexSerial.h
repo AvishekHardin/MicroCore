@@ -25,6 +25,7 @@
 #include "Arduino.h"
 #include "WString.h"
 #include "core_settings.h"
+#include "picoUART.h"
 
 #define DEC  ((uint8_t) 10)
 #define HEX  ((uint8_t) 16)
@@ -153,95 +154,14 @@
   #define PRINT_USE_BASE_DEC
 #endif
 
-// Set default baud rate based on F_CPU
-#ifndef CUSTOM_BAUD_RATE
-  #if F_CPU >= 5000000L
-    #define BAUD_RATE  115200
-  #elif F_CPU >= 4800000L
-    #define BAUD_RATE  57600  
-  #elif F_CPU >= 1000000L
-    #define BAUD_RATE  19200
-  #elif F_CPU >= 600000L
-    #define BAUD_RATE  9600
-  #else
-    #define BAUD_RATE  300
-    #warning Clock speed too slow for serial communication!
-  #endif
-#else
-  #define BAUD_RATE CUSTOM_BAUD_RATE
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void TxByte(unsigned char);
-  unsigned char RxByte();
-
-  // These two functions are non-blocking variants
-  unsigned char RxByteNBZeroReturn();  // NBZeroReturn will return a zero when there is no byte read
-  int16_t RxByteNBNegOneReturn();      // NBNegOneReturn returns -1; which is the same as standard Serial.write()
 
 #ifdef __cplusplus
 }
 #endif
 
-#define DIVIDE_ROUNDED(NUMERATOR, DIVISOR) ((((2*(NUMERATOR))/(DIVISOR))+1)/2)
-
-// txbit takes 3*RXDELAY + 15 cycles
-#define BIT_CYCLES DIVIDE_ROUNDED(F_CPU,BAUD_RATE*1L) 
-#define TXDELAYCOUNT DIVIDE_ROUNDED(BIT_CYCLES - 7, 3)
-
-#define RXSTART_CYCLES DIVIDE_ROUNDED(3*F_CPU,2L*BAUD_RATE) 
-// 1st bit sampled 3*RXDELAY + 11 cycles after start bit begins
-#define RXSTARTCOUNT DIVIDE_ROUNDED(RXSTART_CYCLES - 13, 3)
-// rxbit takes 3*RXDELAY + 12 cycles
-#define RXDELAYCOUNT DIVIDE_ROUNDED(BIT_CYCLES - 13, 3)
-
-#if (RXSTARTCOUNT > 255)
-  #if (F_CPU == 20000000L)
-    #error Baud rate too low for a 20 MHz clock! Use 57600 baud or more
-  #elif (F_CPU == 16000000L)
-    #error Baud rate too low for a 16 MHz clock! Use 38400 baud or more
-  #elif (F_CPU == 12000000L)
-    #error Baud rate too low for a 12 MHz clock! Use 38400 baud or more
-  #elif (F_CPU == 9600000L)
-    #error Baud rate too low for a 9.6 MHz clock! Use 38400 baud or more
-  #elif (F_CPU == 8000000L)
-    #error Baud rate too low for a 16 MHz clock! Use 38400 baud or more
-  #elif (F_CPU == 4800000L)
-    #error Baud rate too low for a 4.8 MHz clock! Use 9600 baud or more
-  #elif (F_CPU == 1200000L)
-    #error Baud rate too low for a 1.2 MHz clock! Use 2400 baud or more
-  #elif (F_CPU == 1000000L)
-    #error Baud rate too low for a 1 MHz clock! Use 2400 baud or more
-  #elif (F_CPU == 600000L)
-    #error Baud rate too low for a 600kHz clock! Use 1200 baud or more
-  #endif
-#endif
-
-asm(".global TXDELAY" );
-asm(".global RXSTART" );
-asm(".global RXDELAY" );
-
-// dummy function defines no code
-// hack to define absolute linker symbols using C macro calculations
-static void dummy() __attribute__ ((naked));
-static void dummy() __attribute__ ((used));
-static void dummy()
-{
-asm (
-    ".equ TXDELAY, %[txdcount]\n"
-    ::[txdcount] "M" (TXDELAYCOUNT)
-    );
-asm (
-    ".equ RXSTART, %[rxscount]\n"
-    ::[rxscount] "M" (RXSTARTCOUNT)
-    );
-asm (
-    ".equ RXDELAY, %[rxdcount]\n"
-    ::[rxdcount] "M" (RXDELAYCOUNT)
-    );
-}
 
 class HalfDuplexSerial
 {
